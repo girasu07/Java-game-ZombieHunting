@@ -532,29 +532,37 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
         if (code == KeyEvent.VK_W)
-            p1Up = true;
+            if(isHost) p1Up = true;
+            else p2Up = true;
         if (code == KeyEvent.VK_S)
-            p1Down = true;
+            if(isHost) p1Down = true;
+            else p2Down = true;
         if (code == KeyEvent.VK_A)
-            p1Left = true;
+            if(isHost) p1Left = true;
+            else p2Left = true;
         if (code == KeyEvent.VK_D)
-            p1Right = true;
+            if(isHost) p1Right = true;
+            else p2Right = true;    
 
-        if (code == KeyEvent.VK_UP)
-            p2Up = true;
-        if (code == KeyEvent.VK_DOWN)
-            p2Down = true;
-        if (code == KeyEvent.VK_LEFT)
-            p2Left = true;
-        if (code == KeyEvent.VK_RIGHT)
-            p2Right = true;
-
-        if (code == KeyEvent.VK_CONTROL)
-            p2Shooting = true;
-
-        if (!p1.isDown && code == KeyEvent.VK_SPACE) {
-            p1Shooting = true;
+        if (code == KeyEvent.VK_SPACE) {
+            if(isHost) {
+                if(!p1.isDown)p1Shooting = true;
+            }
+            else{
+                if(!p2.isDown)p2Shooting = true;
+            }
+        
             tryShoot(p1, p1Shooting, 1); // P1さん、撃てるなら撃って！
+            tryShoot(p2, p2Shooting, 2); // P2さん、撃てるなら撃って！
+        }
+
+        if (code == KeyEvent.VK_SHIFT) {
+            if(isHost) {
+                if(!p1.isDown)p1Shift = true;
+            }
+            else{
+                if(!p2.isDown)p2Shift = true;
+            }
         }
     }
 
@@ -562,25 +570,17 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
     public void keyReleased(KeyEvent e) {
         int code = e.getKeyCode();
         if (code == KeyEvent.VK_W)
-            p1Up = false;
+            if(isHost) p1Up = false;
+            else p2Up = false;
         if (code == KeyEvent.VK_S)
-            p1Down = false;
+            if(isHost) p1Down = false;
+            else p2Down = false;
         if (code == KeyEvent.VK_A)
-            p1Left = false;
+            if(isHost) p1Left = false;
+            else p2Left = false;
         if (code == KeyEvent.VK_D)
-            p1Right = false;
-
-        if (code == KeyEvent.VK_UP)
-            p2Up = false;
-        if (code == KeyEvent.VK_DOWN)
-            p2Down = false;
-        if (code == KeyEvent.VK_LEFT)
-            p2Left = false;
-        if (code == KeyEvent.VK_RIGHT)
-            p2Right = false;
-
-        if (code == KeyEvent.VK_CONTROL)
-            p2Shooting = false;
+            if(isHost) p1Right = false;
+            else p2Right = false;
 
         // キーを離した瞬間、次の入力がすぐ効くようにタイマーを少し進めておくテクニック
         // （必須ではありませんが、操作感が良くなります）
@@ -591,6 +591,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
         if (code == KeyEvent.VK_SPACE) {
             p1Shooting = false;
             tryShoot(p1, p1Shooting, 1); // P1さん、
+            tryShoot(p2, p2Shooting, 2); // P2さん、
         }
     }
 
