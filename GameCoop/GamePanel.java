@@ -58,6 +58,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
     private Random random = new Random();
     private int spawnTimer = 0;
 
+    public static int totalKills = 0;
+
     public GamePanel() {
         // プレイヤー初期化
         players.add(new Player(100, 100, Color.GREEN)); // Player 1
@@ -67,7 +69,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
         p2 = players.get(1);
 
         this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
-        this.setBackground(Color.WHITE);
+        this.setBackground(Color.GRAY);
         this.setFocusable(true);
 
         // リスナー登録
@@ -263,6 +265,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
             }
             if (hit) {
                 eit.remove(); // 敵消去
+                GamePanel.totalKills++; // カウントアップ
             }
         }
 
@@ -520,11 +523,18 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
             e.draw(g2);
 
         // paintComponentの中の super.paintComponent(g); の直下に書く
-        g2.setColor(Color.GRAY);
+        g2.setColor(Color.LIGHT_GRAY);
         for (int i = 0; i <= WIDTH; i += TILE_SIZE)
             g2.drawLine(i, 0, i, HEIGHT);
         for (int i = 0; i <= HEIGHT; i += TILE_SIZE)
             g2.drawLine(0, i, WIDTH, i);
+
+        // ★UI表示（一番手前に描くため、最後に書く）
+        g2.setFont(new Font("Arial", Font.BOLD, 40)); // フォント設定（太字、サイズ40）
+        g2.setColor(Color.WHITE); // 文字色
+    
+        // 文字を描画 (表示する文字, X座標, Y座標)
+        g2.drawString("KILLS: " + totalKills, 30, 50);
     }
 
     // --- 入力処理 ---
