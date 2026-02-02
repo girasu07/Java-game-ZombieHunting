@@ -403,7 +403,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
     private void sendGameState() {
         try {
             // 現在の全情報をパック詰め
-            GameState state = new GameState(p1, p2, enemies);
+            GameState state = new GameState(p1, p2, enemies, totalKills);
             out.writeObject(state);
             out.reset(); // ★重要：これを忘れると古いデータが送られ続けます！
         } catch (Exception e) {
@@ -473,6 +473,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
                     p2.y = state.p2y;
                     p2.direction = state.p2Dir;
                     p2.isDown = state.p2IsDown;
+
+                    GamePanel.totalKills = state.totalKills;
                     
                     // --- 2. 敵の同期 ---
                     // エラー防止のため synchronized で守る
@@ -532,7 +534,6 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
         // ★UI表示（一番手前に描くため、最後に書く）
         g2.setFont(new Font("Arial", Font.BOLD, 40)); // フォント設定（太字、サイズ40）
         g2.setColor(Color.WHITE); // 文字色
-    
         // 文字を描画 (表示する文字, X座標, Y座標)
         g2.drawString("KILLS: " + totalKills, 30, 50);
     }
@@ -600,8 +601,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
 
         if (code == KeyEvent.VK_SPACE) {
             p1Shooting = false;
-            tryShoot(p1, p1Shooting, 1); // P1さん、
-            tryShoot(p2, p2Shooting, 2); // P2さん、
+            p2Shooting = false;
         }
     }
 
