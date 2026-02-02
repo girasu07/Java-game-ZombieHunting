@@ -4,6 +4,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
+import javax.sound.sampled.*;
 
 // ★ここに追加:ネットワーク部分
 import java.io.*;
@@ -47,7 +48,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
     private boolean p2Shooting = false;
     private int p1shootTimer = 0;
     private int p2shootTimer = 0;
-    private static final int SHOOT_DELAY = 15; // 連射速度（小さいほど速い）
+    private static final int SHOOT_DELAY = 20; // 連射速度（小さいほど速い）
 
     private int PlayermoveTimer = 0;
     private double EnemymoveTimer = 0;
@@ -206,36 +207,29 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
         p1shootTimer++; // 常にカウントアップ
         p2shootTimer++;
 
-        if (p1Shooting && p1shootTimer >= SHOOT_DELAY) {
-            // 弾の発射処理
-            double angle = 0;
-            switch (p1.direction) {
-                case 0: angle = -Math.PI / 2; break; // 上
-                case 1: angle = 0; break;            // 右
-                case 2: angle = Math.PI / 2; break;  // 下
-                case 3: angle = Math.PI; break;      // 左
-            }
-            bullets.add(new Bullet(p1.getCenterX(), p1.getCenterY(), angle));
-
-            // タイマーリセット
-            p1shootTimer = 0;
+        if (p1Shooting && !p1.isDown && !p1.isReloading && p1.currentAmmo > 0) {
+            Shoot(p1, p1Shooting, 1); // P1さん、撃てるなら撃って！
+        }
+        if (p2Shooting && !p2.isDown && !p2.isReloading && p2.currentAmmo > 0) {
+            Shoot(p2, p2Shooting, 2); // P2さん、撃てるなら撃って！
         }
 
-        if (p2Shooting && p2shootTimer >= SHOOT_DELAY) {
-            // 弾の発射処理
-            double angle = 0;
-            switch (p2.direction) {
-                case 0: angle = -Math.PI / 2; break; // 上
-                case 1: angle = 0; break;            // 右
-                case 2: angle = Math.PI / 2; break;  // 下
-                case 3: angle = Math.PI; break;      // 左
+        if (p1.isReloading) {
+            p1.reloadTimer++;
+            if (p1.reloadTimer >= p1.reloadDuration) {
+                p1.currentAmmo = p1.maxAmmo;
+                p1.isReloading = false;
+                p1.reloadTimer = 0;
             }
-            bullets.add(new Bullet(p2.getCenterX(), p2.getCenterY(), angle));
-
-            // タイマーリセット
-            p2shootTimer = 0;
         }
-
+        if (p2.isReloading) {
+            p2.reloadTimer++;
+            if (p2.reloadTimer >= p2.reloadDuration) {
+                p2.currentAmmo = p2.maxAmmo;
+                p2.isReloading = false;
+                p2.reloadTimer = 0;
+            }
+        }
         // 4. 敵の移動と当たり判定
         Iterator<Enemy> eit = enemies.iterator();
         while (eit.hasNext()) {
@@ -330,7 +324,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
     }
 
     // プレイヤーごとの射撃処理をまとめたメソッド
-    private void tryShoot(Player p, boolean isShooting, int playerNum) {
+    private void Shoot(Player p, boolean isShooting, int playerNum) {
 
         // --- 1. その人のタイマーを進める ---
         // (playerNumが 1 なら p1のタイマー、それ以外なら p2のタイマーを使う)
@@ -344,7 +338,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
         int currentTimer = (playerNum == 1) ? p1shootTimer : p2shootTimer;
 
         // --- 2. 発射判定 ---
-        // 「撃つボタンが押されている」かつ「連射待ち時間が過ぎている」なら発射！
+        // 「撃つボタンが押されている」かつ「連射待ち時間が過ぎているなら発射！
         if (isShooting && currentTimer >= SHOOT_DELAY) {
 
             // プレイヤーの向き(0~3)に合わせて、弾の飛ぶ角度を決める
@@ -366,7 +360,8 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
 
             // 弾を生成してリストに追加
             bullets.add(new Bullet(p.getCenterX(), p.getCenterY(), angle));
-
+            p.currentAmmo--;
+            playSE("sound_fire.wav");
             // --- 3. 撃った人のタイマーだけリセット ---
             if (playerNum == 1) {
                 p1shootTimer = 0;
@@ -536,9 +531,53 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
         g2.setColor(Color.WHITE); // 文字色
         // 文字を描画 (表示する文字, X座標, Y座標)
         g2.drawString("KILLS: " + totalKills, 30, 50);
+
+        g2.setFont(new Font("Arial", Font.BOLD, 20));
+        g2.setColor(Color.WHITE);
+
+       
+        if (p1.isReloading) {
+            // リロード中は赤文字で警告
+            g2.setColor(Color.RED);
+            g2.drawString("RELOADING...", p1.x, p1.y - 10); // キャラの上に表示
+        } else {
+            // 通常時は弾数を表示
+            if (isHost) {
+                g2.setColor(Color.WHITE);
+                g2.drawString("Ammo: " + p1.currentAmmo + " / " + p1.maxAmmo, 650, 50);
+            }
+        }
+        
+        if (p2.isReloading) {
+            // リロード中は赤文字で警告
+            g2.setColor(Color.RED);
+            g2.drawString("RELOADING...", p2.x, p2.y - 10); // キャラの上に表示
+        } else {
+            if (!isHost) {
+                // 通常時は弾数を表示
+                g2.setColor(Color.WHITE);
+                g2.drawString("Ammo: " + p2.currentAmmo + " / " + p2.maxAmmo, 650, 50);
+            }
+        }    
+    }
+    
+    // 音を鳴らす専用のメソッド
+    public void playSE(String fileName) {
+        try {
+            // 音声ファイルを読み込む
+            File soundFile = new File("sounds/" + fileName); // soundsフォルダを作る前提
+            AudioInputStream audioIn = AudioSystem.getAudioInputStream(soundFile);
+            
+            // クリップ（再生機）を用意して再生
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioIn);
+            clip.start();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    // --- 入力処理 ---
     @Override
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
@@ -557,14 +596,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
 
         if (code == KeyEvent.VK_SPACE) {
             if(isHost) {
-                if(!p1.isDown)p1Shooting = true;
+                p1Shooting = true;
             }
             else{
-                if(!p2.isDown)p2Shooting = true;
+                p2Shooting = true;
             }
         
-            tryShoot(p1, p1Shooting, 1); // P1さん、撃てるなら撃って！
-            tryShoot(p2, p2Shooting, 2); // P2さん、撃てるなら撃って！
+            //Shoot(p1, p1Shooting, 1); // P1さん、撃てるなら撃って！
+            //Shoot(p2, p2Shooting, 2); // P2さん、撃てるなら撃って！
         }
 
         if (code == KeyEvent.VK_SHIFT) {
@@ -573,6 +612,14 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
             }
             else{
                 if(!p2.isDown)p2Shift = true;
+            }
+        }
+        if (code == KeyEvent.VK_R) {
+            if(isHost) {
+                if(!p1.isDown)p1.reload();
+            }
+            else{
+                if(!p2.isDown)p2.reload();
             }
         }
     }

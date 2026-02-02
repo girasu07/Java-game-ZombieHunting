@@ -1,5 +1,4 @@
 import java.awt.*;
-import java.awt.Rectangle;
 
 public class Player {
     // 外部からアクセスしやすいようpublicにしていますが、
@@ -15,6 +14,13 @@ public class Player {
     public boolean isDown = false; // ダウン中かどうか
     private int revivalTimer = 0;  // 復活までのカウント
     private static final int REVIVAL_TIME = 180; // 3秒 (60FPS想定: 60回×3秒)
+
+    //reload関連
+    public int maxAmmo = 30;       // マガジンサイズ（最大弾数）
+    public int currentAmmo = 30;   // 今の残弾
+    public boolean isReloading = false; // リロード中かどうか
+    public int reloadTimer = 0;    // リロード時間を計るタイマー
+    public int reloadDuration = 60; // リロードにかかる時間
 
     public Player(int startX, int startY, Color c) {
         // スタート位置もマスの角にきれいに合わせる補正
@@ -51,6 +57,17 @@ public class Player {
             y = nextY;
         }
     }
+
+    public void reload() {
+    // 弾が減っていて、かつリロード中じゃなければ実行
+        if (currentAmmo < maxAmmo && !isReloading) {
+            isReloading = true;
+             // リロード完了
+            
+        }
+        // System.out.println("Reloading..."); // デバッグ用
+    }
+
 
     public void checkRevival() {
         if (isDown) {
