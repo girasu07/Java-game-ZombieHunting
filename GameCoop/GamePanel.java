@@ -44,6 +44,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
     // private boolean keySpace;
     private int mouseX, mouseY;
 
+    private boolean p1triggerLock = false;
+    private boolean p2triggerLock = false;
+
     private boolean p1Shooting = false;
     private boolean p2Shooting = false;
     private int p1shootTimer = 0;
@@ -207,11 +210,11 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
         p1shootTimer++; // 常にカウントアップ
         p2shootTimer++;
 
-        if (p1Shooting && !p1.isDown && !p1.isReloading && p1.currentAmmo > 0) {
-            Shoot(p1, p1Shooting, 1); // P1さん、撃てるなら撃って！
+        if (p1Shooting && !p1.isDown && !p1.isReloading) {
+            Shoot(p1, p1Shooting, 1, p1.currentAmmo); // P1さん、撃てるなら撃って！
         }
-        if (p2Shooting && !p2.isDown && !p2.isReloading && p2.currentAmmo > 0) {
-            Shoot(p2, p2Shooting, 2); // P2さん、撃てるなら撃って！
+        if (p2Shooting && !p2.isDown && !p2.isReloading) {
+            Shoot(p2, p2Shooting, 2, p2.currentAmmo); // P2さん、撃てるなら撃って！
         }
 
         if (p1.isReloading) {
@@ -324,7 +327,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
     }
 
     // プレイヤーごとの射撃処理をまとめたメソッド
-    private void Shoot(Player p, boolean isShooting, int playerNum) {
+    private void Shoot(Player p, boolean isShooting, int playerNum, int currentAmmo) {
 
         // --- 1. その人のタイマーを進める ---
         // (playerNumが 1 なら p1のタイマー、それ以外なら p2のタイマーを使う)
@@ -339,25 +342,36 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
 
         // --- 2. 発射判定 ---
         // 「撃つボタンが押されている」かつ「連射待ち時間が過ぎているなら発射！
-        if (isShooting && currentTimer >= SHOOT_DELAY) {
-
-            // プレイヤーの向き(0~3)に合わせて、弾の飛ぶ角度を決める
+        if (currentTimer >= SHOOT_DELAY) {
             double angle = 0;
-            switch (p.direction) {
-                case 0:
-                    angle = -Math.PI / 2;
-                    break; // 上
-                case 1:
-                    angle = 0;
-                    break; // 右
-                case 2:
-                    angle = Math.PI / 2;
-                    break; // 下
-                case 3:
-                    angle = Math.PI;
-                    break; // 左
+            if (currentAmmo > 0) {
+                // プレイヤーの向き(0~3)に合わせて、弾の飛ぶ角度を決める
+                switch (p.direction) {
+                    case 0:
+                        angle = -Math.PI / 2;
+                        break; // 上
+                    case 1:
+                        angle = 0;
+                        break; // 右
+                    case 2:
+                        angle = Math.PI / 2;
+                        break; // 下
+                    case 3:
+                        angle = Math.PI;
+                        break; // 左
+                }
+            } else {
+                boolean isLocked = (playerNum == 1) ? p1triggerLock : p2triggerLock;
+                if (!isLocked) {
+                    playSE("sound_emptyfire.wav");
+                    if (playerNum == 1) {
+                        p1triggerLock = true;
+                    } else {
+                        p2triggerLock = true;
+                    }
+                }   
+                return; // 弾が無いなら発射しない
             }
-
             // 弾を生成してリストに追加
             bullets.add(new Bullet(p.getCenterX(), p.getCenterY(), angle));
             p.currentAmmo--;
