@@ -151,7 +151,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
         long lastTime = System.nanoTime();
         long currentTime;
     
-        while (!isGameOver) {
+        while (isRunning) {
             currentTime = System.nanoTime();
             delta += (currentTime - lastTime) / drawInterval;
             lastTime = currentTime;
@@ -161,7 +161,9 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
                     if (isHost) {
                         // 【ホストの仕事】
                         // 1. ゲームを普通に進める (敵の移動、P1の移動など)
-                        updateGame();
+                        if (!isGameOver) {
+                            updateGame();
+                        }
                         
                         // 2. クライアントからの「キー入力」を受け取って、P2に反映する
                         //receiveClientInput();

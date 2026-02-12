@@ -16,7 +16,7 @@ public class Main {
         JFrame window = new JFrame();
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.setResizable(false);
-        window.setTitle("Zombie Survival - " + (choice == 0 ? "Host" : "Guest"));
+        window.setTitle("Zombie Hunting - " + (choice == 0 ? "Host" : "Guest"));
 
         GamePanel gamePanel = new GamePanel();
         
